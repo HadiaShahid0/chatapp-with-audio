@@ -1,12 +1,16 @@
 import bcrypt from "bcryptjs";
 import User from "../models/userModel.js";
 import PendingUser from "../models/pendingUsers.js";
-import { generateToken, generateMfaToken,generatePasswordResetToken } from "../utils/jwt.js";
+import {
+  generateToken,
+  generateMfaToken,
+  generatePasswordResetToken,
+} from "../utils/jwt.js";
 import transporter from "../utils/nodemailer.js";
 import { verifyCaptcha } from "./captchaService.js";
 import crypto from "crypto";
-export const registerService = async (name, email, password,captchaToken) => {
-  await verifyCaptcha(captchaToken)
+export const registerService = async (name, email, password, captchaToken) => {
+  await verifyCaptcha(captchaToken);
   const existingUser = await User.findOne({
     where: { email },
   });
@@ -78,18 +82,8 @@ export const loginService = async (email, password) => {
     throw new Error("Invalid email or password.");
   }
 
-  console.log("USER ID:", user.id);
-  console.log("MFA ENABLED:", user.mfaEnabled);
-
   if (user.mfaEnabled) {
-    console.log("Before generateMfaToken");
-    console.log("user.id =", user.id);
-    console.log("generateMfaToken =", generateMfaToken);
-
     const mfaToken = generateMfaToken(user.id);
-
-    console.log("MFA TOKEN CREATED");
-
     return {
       requiresMfa: true,
       mfaToken,
@@ -143,14 +137,12 @@ export const verifyOtpService = async (email, otp) => {
     throw new Error("Invalid OTP.");
   }
 
-  // Create actual user only after OTP verification
   const user = await User.create({
     name: pendingUser.name,
     email: pendingUser.email,
     password: pendingUser.password,
   });
 
-  // Remove temporary registration
   await pendingUser.destroy();
 
   return {
@@ -158,7 +150,6 @@ export const verifyOtpService = async (email, otp) => {
     user,
   };
 };
-
 
 export const forgotPasswordService = async (email) => {
   const user = await User.findOne({
@@ -168,13 +159,9 @@ export const forgotPasswordService = async (email) => {
   if (!user) {
     throw new Error("Email does not exist.");
   }
-  const resetPasswordOtp = crypto
-    .randomInt(100000, 1000000)
-    .toString();
+  const resetPasswordOtp = crypto.randomInt(100000, 1000000).toString();
 
-  const resetPasswordOtpExpiredAt = new Date(
-    Date.now() + 3 * 60 * 1000
-  );
+  const resetPasswordOtpExpiredAt = new Date(Date.now() + 3 * 60 * 1000);
 
   await user.update({
     resetPasswordOtp,
@@ -233,7 +220,6 @@ export const verifyResetOtpService = async (email, otp) => {
 
   const resetToken = generatePasswordResetToken(user.id);
 
-  // OTP cannot be reused
   await user.update({
     resetPasswordOtp: null,
     resetPasswordOtpExpiredAt: null,
@@ -245,10 +231,7 @@ export const verifyResetOtpService = async (email, otp) => {
   };
 };
 
-export const resetPasswordService = async (
-  userId,
-  newPassword
-) => {
+export const resetPasswordService = async (userId, newPassword) => {
   const user = await User.findByPk(userId);
 
   if (!user) {

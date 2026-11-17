@@ -14,7 +14,7 @@ export const verifyCaptcha = async (captchaToken) => {
         secret: process.env.RECAPTCHA_SECRET_KEY,
         response: captchaToken,
       }),
-    }
+    },
   );
 
   const result = await response.json();

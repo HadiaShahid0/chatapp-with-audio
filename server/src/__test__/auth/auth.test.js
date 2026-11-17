@@ -15,7 +15,6 @@ import {
   loginService,
   verifyService,
   logoutService,
-  verifyOtpService,
   forgotPasswordService,
   verifyResetOtpService,
   resetPasswordService,
@@ -44,6 +43,7 @@ vi.mock("../../utils/nodemailer.js", () => ({
     sendMail: vi.fn(),
   },
 }));
+
 vi.mock("bcryptjs", () => ({
   default: {
     hash: vi.fn(),
@@ -491,55 +491,37 @@ describe("auth", () => {
     expect(user.update).not.toHaveBeenCalled();
   });
   it("should reset password successfully", async () => {
-  
-        const user = {
-          id: 1,
-          email: "test@gmail.com",
-          password: "old-password",
-          update: vi.fn(),
-        };
-  
-        User.findByPk.mockResolvedValue(user);
-  
-        bcrypt.hash.mockResolvedValue(
-          "new-hashed-password"
-        );
-  
-        const result =
-          await resetPasswordService(
-            1,
-            "new-password"
-          );
-  
-        expect(result).toEqual({
-          message:
-            "Password reset successfully.",
-        });
-  
-        expect(bcrypt.hash).toHaveBeenCalledWith(
-          "new-password",
-          10
-        );
-  
-        expect(user.update).toHaveBeenCalledWith({
-          password: "new-hashed-password",
-        });
-      });
-  
-  
-      it("should fail when user does not exist", async () => {
-  
-        User.findByPk.mockResolvedValue(null);
-  
-        await expect(
-          resetPasswordService(
-            999,
-            "new-password"
-          )
-        ).rejects.toThrow(
-          "User not found."
-        );
-  
-        expect(bcrypt.hash).not.toHaveBeenCalled();
-      });
+    const user = {
+      id: 1,
+      email: "test@gmail.com",
+      password: "old-password",
+      update: vi.fn(),
+    };
+
+    User.findByPk.mockResolvedValue(user);
+
+    bcrypt.hash.mockResolvedValue("new-hashed-password");
+
+    const result = await resetPasswordService(1, "new-password");
+
+    expect(result).toEqual({
+      message: "Password reset successfully.",
+    });
+
+    expect(bcrypt.hash).toHaveBeenCalledWith("new-password", 10);
+
+    expect(user.update).toHaveBeenCalledWith({
+      password: "new-hashed-password",
+    });
+  });
+
+  it("should fail when user does not exist", async () => {
+    User.findByPk.mockResolvedValue(null);
+
+    await expect(resetPasswordService(999, "new-password")).rejects.toThrow(
+      "User not found.",
+    );
+
+    expect(bcrypt.hash).not.toHaveBeenCalled();
+  });
 });
